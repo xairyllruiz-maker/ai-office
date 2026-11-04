@@ -105,6 +105,33 @@ button {
   </div>
 
 </main>
+<section style="background:#202b40;padding:20px;margin:20px;border-radius:15px;color:white;">
+  <h2>🤖 Office Architect</h2>
+  <p>What should your AI office work on?</p>
+  <input id="taskInput" placeholder="Enter an office task..."
+    style="padding:12px;width:90%;border-radius:8px;">
+  <button onclick="addOfficeTask()"
+    style="padding:12px;margin-top:10px;background:#3498db;color:white;border:0;border-radius:8px;">
+    Add Task
+  </button>
+  <ul id="taskList"></ul>
+</section>
 
+<script>
+function addOfficeTask() {
+  const input = document.getElementById("taskInput");
+  const task = input.value.trim();
+
+  if (!task) {
+    alert("Please enter a task first!");
+    return;
+  }
+
+  const item = document.createElement("li");
+  item.textContent = task;
+  document.getElementById("taskList").appendChild(item);
+  input.value = "";
+}
+</script>
 </body>
 </html>
