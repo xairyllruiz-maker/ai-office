@@ -118,20 +118,62 @@ button {
 </section>
 
 <script>
+const STORAGE_KEY = "aiOfficeTasks";
+let officeTasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+
+function saveOfficeTasks() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(officeTasks));
+}
+
+function renderOfficeTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  officeTasks.forEach((task, index) => {
+    const item = document.createElement("li");
+    const label = document.createElement("span");
+
+    label.textContent = task.done ? "✅ " + task.text : "📌 " + task.text;
+    label.style.textDecoration = task.done ? "line-through" : "none";
+
+    const complete = document.createElement("button");
+    complete.textContent = task.done ? "Undo" : "Complete";
+    complete.onclick = () => {
+      officeTasks[index].done = !officeTasks[index].done;
+      saveOfficeTasks();
+      renderOfficeTasks();
+    };
+
+    const remove = document.createElement("button");
+    remove.textContent = "Delete";
+    remove.onclick = () => {
+      officeTasks.splice(index, 1);
+      saveOfficeTasks();
+      renderOfficeTasks();
+    };
+
+    item.append(label, complete, remove);
+    list.appendChild(item);
+  });
+}
+
 function addOfficeTask() {
   const input = document.getElementById("taskInput");
   const task = input.value.trim();
 
   if (!task) {
-    alert("Please enter a task first!");
+    alert("Please enter a task!");
     return;
   }
 
-  const item = document.createElement("li");
-  item.textContent = task;
-  document.getElementById("taskList").appendChild(item);
+  officeTasks.push({ text: task, done: false });
+  saveOfficeTasks();
+  renderOfficeTasks();
   input.value = "";
 }
+
+renderOfficeTasks();
+
 </script>
 </body>
 </html>
