@@ -143,6 +143,11 @@ button {
     Add Task
   </button>
   <ul id="taskList"></ul>
+  <div id="employeeResponse"
+  style="margin-top:15px;padding:15px;background:#101827;border-radius:10px;">
+  <h3>Employee Response</h3>
+  <p>Assign a task to receive a response from your employee.</p>
+  </div>
 </section>
 
 <script>
@@ -196,6 +201,15 @@ function addOfficeTask() {
 
   const employee = document.getElementById("assignedEmployee").value;
 officeTasks.push({ text: task, employee: employee, done: false });
+  const responseText = document.querySelector("#employeeResponse p");
+
+if (employee === "Office Architect") {
+  responseText.textContent = "Office Architect: I'll organize this task and help plan the next steps: " + task;
+} else if (employee === "Project Manager") {
+  responseText.textContent = "Project Manager: I'll break this task into smaller steps and organize the work: " + task;
+} else if (employee === "Business Planner") {
+  responseText.textContent = "Business Planner: I'll help develop a plan and strategy for this task: " + task;
+}
   saveOfficeTasks();
   renderOfficeTasks();
   input.value = "";
