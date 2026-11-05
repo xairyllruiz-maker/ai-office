@@ -190,7 +190,7 @@ function renderOfficeTasks() {
   });
 }
 
-function addOfficeTask() {
+async function addOfficeTask() {
   const input = document.getElementById("taskInput");
   const task = input.value.trim();
 
@@ -200,19 +200,45 @@ function addOfficeTask() {
   }
 
   const employee = document.getElementById("assignedEmployee").value;
-officeTasks.push({ text: task, employee: employee, done: false });
-  const responseText = document.querySelector("#employeeResponse p");
 
-if (employee === "Office Architect") {
-  responseText.textContent = "Office Architect: I'll organize this task and help plan the next steps: " + task;
-} else if (employee === "Project Manager") {
-  responseText.textContent = "Project Manager: I'll break this task into smaller steps and organize the work: " + task;
-} else if (employee === "Business Planner") {
-  responseText.textContent = "Business Planner: I'll help develop a plan and strategy for this task: " + task;
-}
+  officeTasks.push({
+    text: task,
+    employee: employee,
+    done: false
+  });
+
   saveOfficeTasks();
   renderOfficeTasks();
   input.value = "";
+
+  const responseText = document.querySelector("#employeeResponse p");
+  responseText.textContent = employee + " is thinking...";
+
+  try {
+    const response = await fetch(
+      "https://office-architect-ai.xairyllruiz.workers.dev/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          task: employee + " — " + task
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "The AI request failed.");
+    }
+
+    responseText.textContent = employee + ": " + result.answer;
+  } catch (error) {
+    responseText.textContent =
+      "I couldn't connect to Gemini. Please try again. " + error.message;
+  }
 }
 
 renderOfficeTasks();
