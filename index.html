@@ -130,6 +130,12 @@ button {
 <section style="background:#202b40;padding:20px;margin:20px;border-radius:15px;color:white;">
   <h2>🤖 Office Architect</h2>
   <p>What should your AI office work on?</p>
+  <select id="assignedEmployee"
+  style="padding:12px;width:95%;border-radius:8px;margin-bottom:10px;">
+  <option value="Office Architect">Office Architect</option>
+  <option value="Project Manager">Project Manager</option>
+  <option value="Business Planner">Business Planner</option>
+  </select>
   <input id="taskInput" placeholder="Enter an office task..."
     style="padding:12px;width:90%;border-radius:8px;">
   <button onclick="addOfficeTask()"
@@ -155,7 +161,7 @@ function renderOfficeTasks() {
     const item = document.createElement("li");
     const label = document.createElement("span");
 
-    label.textContent = task.done ? "✅ " + task.text : "📌 " + task.text;
+    label.textContent = (task.done ? "✅ " : "📌 ") + task.text + " — " + (task.employee || "Office Architect");
     label.style.textDecoration = task.done ? "line-through" : "none";
 
     const complete = document.createElement("button");
@@ -188,7 +194,8 @@ function addOfficeTask() {
     return;
   }
 
-  officeTasks.push({ text: task, done: false });
+  const employee = document.getElementById("assignedEmployee").value;
+officeTasks.push({ text: task, employee: employee, done: false });
   saveOfficeTasks();
   renderOfficeTasks();
   input.value = "";
