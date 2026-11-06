@@ -211,31 +211,43 @@ async function addOfficeTask() {
   renderOfficeTasks();
   input.value = "";
 
-  const responseText = document.querySelector("#employeeResponse p");
-  responseText.textContent = "NEW TEST MESSAGE";
+    const responseText = document.querySelector("#employeeResponse p");
+  responseText.textContent = "Working on it...";
 
-  try {
-    const response = await fetch(
-      "https://office-architect-ai.xairyllruiz.workers.dev/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          task: employee + " — " + task
-        })
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const response = await fetch(
+        "https://office-architect-ai.xairyllruiz.workers.dev/",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task: employee + " — " + task })
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        responseText.textContent = employee + ": " + result.answer;
+        return;
       }
-    );
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "The AI request failed.");
+      if (attempt === 4) {
+        throw new Error(result.error || "The AI request failed.");
+      }
+    } catch (error) {
+      if (attempt === 4) {
+        responseText.textContent =
+          "I couldn't connect to Gemini. Please try again. " + error.message;
+        return;
+      }
     }
 
-    responseText.textContent = employee + ": " + result.answer;
-  } catch (error) {
+    responseText.textContent = "Gemini is busy, retrying (" + attempt + "/3)...";
+    await wait(attempt * 2000);
+  } {
     responseText.textContent =
       "I couldn't connect to Gemini. Please try again. " + error.message;
   }
