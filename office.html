@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Office 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe6ff; font-family: "Trebuchet MS", Arial, sans-serif; }
+  canvas { display: block; touch-action: none; }
+  #bar { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; color: #23334d; }
+  #bar b { font-size: 20px; }
+  #bar a { background: #23334d; color: #fff; padding: 8px 14px; border-radius: 20px; text-decoration: none; font-size: 14px; }
+  #info { position: fixed; left: 12px; right: 12px; bottom: 16px; background: #fff; color: #23334d; border-radius: 18px; padding: 14px 16px; box-shadow: 0 6px 0 #9bc7e8; }
+  #info h3 { margin: 0 0 4px; }
+  #info p { margin: 0; line-height: 1.4; }
+  #chat { position: fixed; left: 0; right: 0; bottom: 0; height: 48%; background: #fff; color: #23334d; border-radius: 22px 22px 0 0; box-shadow: 0 -6px 0 #9bc7e8; display: none; flex-direction: column; }
+  #chat.open { display: flex; }
+  #chatHead { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-size: 18px; }
+  #chatHead button { border: 0; background: #eef5fb; border-radius: 50%; width: 36px; height: 36px; font-size: 16px; }
+  #log { flex: 1; overflow-y: auto; padding: 0 14px; display: flex; flex-direction: column; gap: 8px; }
+  .b { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.4; white-space: pre-wrap; }
+  .me { align-self: flex-end; background: #4a90e2; color: #fff; }
+  .ai { align-self: flex-start; background: #eef5fb; }
+  #row { display: flex; gap: 8px; padding: 10px 12px 14px; }
+  #row input { flex: 1; min-width: 0; padding: 12px; border-radius: 14px; border: 2px solid #cfe2f3; font-size: 16px; }
+  #row button { border: 0; border-radius: 14px; padding: 0 16px; font-size: 16px; background: #4a90e2; color: #fff; }
+  #row #mic { background: #ff8a5c; }
+  #row #mic.on { background: #e53935; }
+</style>
+</head>
+<body>
+<div id="bar"><b>🏢 AI Office</b><a href="index.html">Back to tasks</a></div>
+<div id="info"><h3>Welcome, Boss!</h3><p>Drag to look around. Tap a robot to chat or talk with it.</p></div>
+<div id="chat">
+  <div id="chatHead"><b id="chatName"></b><button id="closeChat">✕</button></div>
+  <div id="log"></div>
+  <div id="row"><button id="mic">🎤</button><input id="msg" placeholder="Type a message..."><button id="send">Send</button></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xbfe6ff);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xcfe8ff, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+sun.position.set(5, 9, 6);
+sun.castShadow = true;
+scene.add(sun);
+
+function mat(color) { return new THREE.MeshLambertMaterial({ color }); }
+function add(geo, color, x, y, z, parent) {
+  const m = new THREE.Mesh(geo, mat(color));
+  m.position.set(x, y, z);
+  m.castShadow = true; m.receiveShadow = true;
+  (parent || scene).add(m);
+  return m;
+}
+const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+
+// Room
+add(box(10, 0.4, 8), 0xffe3a3, 0, -0.2, 0);          // floor
+add(box(10, 4, 0.3), 0xffc9d9, 0, 2, -4);            // back wall
+add(box(0.3, 4, 8), 0xc9f0d6, -5, 2, 0);             // left wall
+add(new THREE.CylinderGeometry(2.2, 2.2, 0.06, 32), 0x8fd3ff, 0, 0.03, 0.8); // rug
+add(box(2.4, 1.3, 0.1), 0xffffff, 0, 2.6, -3.8);     // wall board
+add(box(2.2, 1.1, 0.12), 0x4a90e2, 0, 2.6, -3.78);
+
+// Employees
+const staff = [
+  { name: "Office Architect", color: 0x4a90e2, x: -3, text: "Mission: Create and organize your AI office." },
+  { name: "Project Manager", color: 0xff8a5c, x: 0, text: "Mission: Organize projects and break work into smaller tasks." },
+  { name: "Business Planner", color: 0x6bd48a, x: 3, text: "Mission: Help plan business ideas and strategies." }
+];
+const robots = [];
+staff.forEach((s, i) => {
+  add(box(2, 0.12, 1.1), 0xb97a4a, s.x, 1.0, -2.6);                 // desk top
+  [[-0.9, -0.4], [0.9, -0.4], [-0.9, 0.4], [0.9, 0.4]].forEach(p =>
+    add(box(0.1, 1, 0.1), 0x8a5a33, s.x + p[0], 0.5, -2.6 + p[1]));
+  add(box(0.9, 0.6, 0.06), 0x23334d, s.x, 1.5, -2.95);              // monitor
+  add(box(0.8, 0.5, 0.02), 0x9be7ff, s.x, 1.5, -2.91);
+
+  const g = new THREE.Group();
+  g.position.set(s.x, 0, -1.6);
+  scene.add(g);
+  add(box(0.9, 0.9, 0.6), s.color, 0, 0.6, 0, g);                   // body
+  const head = add(box(1.1, 0.9, 0.9), s.color, 0, 1.5, 0, g);     // head
+  add(new THREE.SphereGeometry(0.17, 16, 16), 0xffffff, -0.25, 1.55, 0.46, g);
+  add(new THREE.SphereGeometry(0.17, 16, 16), 0xffffff, 0.25, 1.55, 0.46, g);
+  add(new THREE.SphereGeometry(0.08, 12, 12), 0x23334d, -0.25, 1.55, 0.6, g);
+  add(new THREE.SphereGeometry(0.08, 12, 12), 0x23334d, 0.25, 1.55, 0.6, g);
+  add(box(0.4, 0.07, 0.05), 0xff5a6a, 0, 1.28, 0.46, g);            // smile
+  add(new THREE.CylinderGeometry(0.03, 0.03, 0.35, 8), 0x23334d, 0, 2.12, 0, g);
+  add(new THREE.SphereGeometry(0.1, 12, 12), 0xffd23f, 0, 2.35, 0, g); // antenna
+  add(box(0.18, 0.5, 0.18), s.color, -0.6, 0.65, 0.1, g);           // arms
+  add(box(0.18, 0.5, 0.18), s.color, 0.6, 0.65, 0.1, g);
+  g.traverse(o => { o.userData.staff = s; });
+  robots.push({ g, phase: i * 1.7, s });
+});
+
+// Look around (drag) + tap
+let yaw = 0, pitch = 0.5, dist = 11;
+let down = null, moved = 0;
+const el = renderer.domElement;
+el.addEventListener("pointerdown", e => { down = { x: e.clientX, y: e.clientY }; moved = 0; });
+el.addEventListener("pointermove", e => {
+  if (!down) return;
+  const dx = e.clientX - down.x, dy = e.clientY - down.y;
+  moved += Math.abs(dx) + Math.abs(dy);
+  yaw -= dx * 0.005;
+  pitch = Math.max(0.15, Math.min(1.2, pitch + dy * 0.004));
+  down = { x: e.clientX, y: e.clientY };
+});
+el.addEventListener("pointerup", e => {
+  down = null;
+  if (moved > 8) return;
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  const hit = ray.intersectObjects(scene.children, true).find(h => h.object.userData.staff);
+  if (hit) {
+    const s = hit.object.userData.staff;
+    openChat(s);
+  }
+});
+addEventListener("resize", () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+
+// ---------- Chat and voice ----------
+const WORKER_URL = "https://office-architect-ai.xairyllruiz.workers.dev/";
+const $ = id => document.getElementById(id);
+let current = null, busy = false;
+
+function bubble(text, who) {
+  const d = document.createElement("div");
+  d.className = "b " + who;
+  d.textContent = text;
+  $("log").appendChild(d);
+  $("log").scrollTop = $("log").scrollHeight;
+  return d;
+}
+function openChat(s) {
+  current = s;
+  $("info").style.display = "none";
+  $("chat").classList.add("open");
+  $("chatName").textContent = "🤖 " + s.name;
+  $("log").innerHTML = "";
+  bubble("Hi Boss! " + s.text.replace("Mission: ", "My job: ") + " What should we work on?", "ai");
+}
+$("closeChat").onclick = () => {
+  $("chat").classList.remove("open");
+  $("info").style.display = "";
+  speechSynthesis.cancel();
+  if (current) current.talking = false;
+  current = null;
+};
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+function speak(text, s) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.slice(0, 400));
+  u.pitch = 1.3;
+  u.onstart = () => { s.talking = true; };
+  u.onend = u.onerror = () => { s.talking = false; };
+  speechSynthesis.speak(u);
+}
+
+async function send(viaVoice) {
+  const text = $("msg").value.trim();
+  if (!text || busy || !current) return;
+  const s = current;
+  $("msg").value = "";
+  bubble(text, "me");
+  const wait_b = bubble("...", "ai");
+  busy = true;
+  s.talking = true;
+  let answer = "";
+  for (let attempt = 1; attempt <= 4 && !answer; attempt++) {
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: s.name + " — " + text })
+      });
+      const data = await res.json();
+      if (res.ok) answer = String(data.answer || "").replace(/[#*]/g, "").trim();
+      else if (attempt === 4) answer = "Sorry Boss, I couldn't connect: " + (data.error || "unknown error");
+    } catch (e) {
+      if (attempt === 4) answer = "Sorry Boss, I couldn't connect. Please try again.";
+    }
+    if (!answer) { wait_b.textContent = "Busy, retrying..."; await wait(attempt * 2000); }
+  }
+  wait_b.textContent = answer;
+  $("log").scrollTop = $("log").scrollHeight;
+  busy = false;
+  s.talking = false;
+  if (viaVoice) speak(answer, s);
+}
+$("send").onclick = () => send(false);
+$("msg").addEventListener("keydown", e => { if (e.key === "Enter") send(false); });
+
+// Microphone (works in Chrome on Android)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+$("mic").onclick = () => {
+  if (!SR) { alert("Voice input isn't supported in this browser. Use Chrome."); return; }
+  const rec = new SR();
+  rec.lang = "en-US";
+  rec.onstart = () => $("mic").classList.add("on");
+  rec.onend = () => $("mic").classList.remove("on");
+  rec.onresult = e => { $("msg").value = e.results[0][0].transcript; send(true); };
+  rec.start();
+};
+
+const clock = new THREE.Clock();
+(function loop() {
+  const t = clock.getElapsedTime();
+  const d = innerWidth < innerHeight ? dist + 3 : dist;
+  camera.position.set(Math.sin(yaw) * d * Math.cos(pitch), d * Math.sin(pitch) + 1, Math.cos(yaw) * d * Math.cos(pitch));
+  camera.lookAt(0, 1.2, -1);
+  robots.forEach(r => {
+    r.g.position.y = Math.abs(Math.sin(t * (r.s.talking ? 7 : 2) + r.phase)) * (r.s.talking ? 0.25 : 0.12);
+    r.g.rotation.y = Math.sin(t + r.phase) * 0.25;
+  });
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
