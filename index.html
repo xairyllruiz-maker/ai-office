@@ -144,7 +144,7 @@ button {
   </button>
   <ul id="taskList"></ul>
   <div id="employeeResponse"
-  style="margin-top:15px;padding:15px;background:#101827;border-radius:10px;">
+  style="margin-top:15px;padding:15px;background:#101827;border-radius:10px;white-space:pre-wrap;line-height:1.5;">
   <h3>Employee Response</h3>
   <p>Assign a task to receive a response from your employee.</p>
   </div>
@@ -230,7 +230,7 @@ async function addOfficeTask() {
       const result = await response.json();
 
       if (response.ok) {
-        responseText.textContent = employee + ": " + result.answer;
+        responseText.textContent = employee + ":\n\n" + result.answer.replace(/[#*]/g, "");
         return;
       }
 
