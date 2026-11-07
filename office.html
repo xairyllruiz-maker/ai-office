@@ -205,6 +205,17 @@ const clk=new THREE.Clock();
   people.forEach((g,i)=>{const act=sel===g&&talking;const h=g.userData.head;
     h.rotation.y=Math.sin(t*.6+i)*.25;h.rotation.x=act?Math.sin(t*9)*.08:Math.sin(t*1.2+i)*.03;
     g.userData.arms.forEach((a,k)=>a.rotation.x=Math.sin(t*(act?2:9)+k*2+i)*.05);
-    g.position.y=Math.sin(t*1.5+i)*.004});
+g.position.y=Math.sin(t*1.5+i)*.004;
+const w=g.userData.walk||(g.userData.walk={hx:g.position.x,hz:g.position.z,tx:g.position.x,tz:g.position.z,next:0});
+if(sel!==g){
+if(t>w.next){w.tx=w.hx+(Math.random()-.5)*3;w.tz=w.hz+(Math.random()-.5)*3;w.next=t+4+Math.random()*4}
+const dx=w.tx-g.position.x,dz=w.tz-g.position.z,dd=Math.hypot(dx,dz);
+if(dd>.08){
+g.position.x+=dx/dd*.012;g.position.z+=dz/dd*.012;
+let da=Math.atan2(dx,dz)-g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));g.rotation.y+=da*.1;
+g.position.y=Math.abs(Math.sin(t*8))*.03;
+g.userData.arms.forEach((a,k)=>a.rotation.x=Math.sin(t*8+k*Math.PI)*.5);
+}}
+});
   R.render(S,cam)})();
 </script></body></html>
