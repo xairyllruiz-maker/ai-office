@@ -125,7 +125,10 @@ function person(e){
   const arms=[-1,1].map(s=>{const a=new THREE.Group();a.position.set(s*.27,1.15,.05);g.add(a);
     const u=add(new THREE.CylinderGeometry(.06,.05,.45,10),mat(e.color,.8),0,-.2,.1,a);u.rotation.x=-1.1;
     add(new THREE.SphereGeometry(.055,10,10),skin,0,-.35,.38,a);return a});
-  [-1,1].forEach(s=>{box(.16,.16,.5,0x1e293b,s*.12,.66,.28,g);box(.14,.55,.14,0x1e293b,s*.12,.38,.55,g)});
+const seatLegs=new THREE.Group();g.add(seatLegs);
+[-1,1].forEach(s=>{box(.16,.16,.5,0x1e293b,s*.12,.66,.28,seatLegs);box(.14,.55,.14,0x1e293b,s*.12,.38,.55,seatLegs)});
+const legs=[-1,1].map(s=>{const L=new THREE.Group();L.position.set(s*.12,.66,.05);L.visible=false;g.add(L);add(new THREE.BoxGeometry(.15,.66,.15),mat(0x1e293b,.8),0,-.33,0,L);return L});
+g.userData.seatLegs=seatLegs;g.userData.legs=legs;
   // label
   const lc=document.createElement("canvas");lc.width=512;lc.height=96;const lx=lc.getContext("2d");
   lx.fillStyle="#000a";lx.roundRect?lx.roundRect(0,10,512,76,38):lx.rect(0,10,512,76);lx.fill();
