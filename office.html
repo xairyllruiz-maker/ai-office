@@ -180,7 +180,7 @@ async function send(txt){if(!sel||busy||!txt.trim())return;const e=sel.userData.
   const w=bubble("a","…",e,false,true);let reply;
   try{
     if(!WORKER_URL)reply="(Demo mode) Add your Cloudflare Worker URL at the top of office.html and I’ll answer for real.";
-    else{const r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:txt,role:e.role})});reply=(await r.json()).reply||"Sorry, something went wrong."}
+else{const r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({task:e.role+" — "+txt})});reply=String((await r.json()).answer||"Sorry, something went wrong.").replace(/[#*]/g,"")}
   }catch(err){reply="I couldn’t reach the server. Check the Worker URL."}
   w.remove();bubble("a",reply,e);busy=false;if(speakOn)say(reply,sel)}
 $("go").onclick=()=>send($("in").value);$("in").addEventListener("keydown",e=>{if(e.key==="Enter")send($("in").value)});
