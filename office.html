@@ -198,7 +198,33 @@ $("mic").onclick=()=>{if(!SR){alert("Voice input isn’t supported in this brows
   const r=new SR();r.lang="en-US";r.onstart=()=>$("mic").classList.add("on");r.onend=()=>$("mic").classList.remove("on");
   r.onresult=e=>send(e.results[0][0].transcript);r.start()};
 
-// ===== loop =====
+function walkPerson(g,t,chat){
+const u=g.userData;
+const w=u.wk||(u.wk={hx:g.position.x,hz:g.position.z,hr:g.rotation.y,st:"sit",next:t+3+Math.random()*4,path:[],i:0,sd:Math.random()<.5?-1:1});
+const stand=w.st!=="sit";
+u.seatLegs.visible=!stand;u.legs[0].visible=stand;u.legs[1].visible=stand;
+if(chat&&(w.st==="out"||w.st==="wait")){w.st="back";w.path=[[w.hx+w.sd*1.1,w.hz],[w.hx,w.hz]];w.i=0}
+if(w.st==="sit"){
+if(!chat&&t>w.next){w.st="out";const tx=Math.max(-5.2,Math.min(5.2,w.hx+(Math.random()-.5)*3));const tz=Math.min(2.4,w.hz+2+Math.random()*2);w.path=[[w.hx+w.sd*1.1,w.hz],[tx,tz]];w.i=0}
+return}
+if(w.st==="wait"){u.legs[0].rotation.x=0;u.legs[1].rotation.x=0;
+if(t>w.next){w.st="back";w.path=[[w.hx+w.sd*1.1,w.hz],[w.hx,w.hz]];w.i=0}
+return}
+const p=w.path[w.i];const dx=p[0]-g.position.x,dz=p[1]-g.position.z,dd=Math.hypot(dx,dz);
+if(dd>.06){
+g.position.x+=dx/dd*.016;g.position.z+=dz/dd*.016;
+let da=Math.atan2(dx,dz)-g.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));g.rotation.y+=da*.12;
+const sw=Math.sin(t*9)*.6;
+u.legs[0].rotation.x=sw;u.legs[1].rotation.x=-sw;
+u.arms[0].rotation.x=sw*.5;u.arms[1].rotation.x=-sw*.5;
+g.position.y=Math.abs(Math.sin(t*9))*.02;
+}else{
+w.i++;
+if(w.i>=w.path.length){
+if(w.st==="out"){w.st="wait";w.next=t+3+Math.random()*3}
+else{w.st="sit";g.position.set(w.hx,0,w.hz);g.rotation.y=w.hr;u.legs[0].rotation.x=0;u.legs[1].rotation.x=0;w.next=t+6+Math.random()*6}
+}}
+}
 function resize(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.fov=innerWidth<innerHeight?62:50;cam.updateProjectionMatrix()}
 addEventListener("resize",resize);resize();
 const clk=new THREE.Clock();
