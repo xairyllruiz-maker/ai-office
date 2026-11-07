@@ -33,6 +33,7 @@ button.on{background:var(--ac);color:#04121c}
 <script>
 // ====== PUT YOUR CLOUDFLARE WORKER URL HERE ======
 const WORKER_URL = "https://office-architect-ai.xairyllruiz.workers.dev/";
+const PERSONA=r=>{r=String(r).toLowerCase();return r.includes("architect")?"Personality: calm, creative, loves tidy systems. Speak like a friendly builder. Answer in 3-5 short sentences, no headings.":r.includes("project")?"Personality: energetic and strict about deadlines. Speak like a coach. Always answer with a short numbered list of at most 5 tasks.":"Personality: bold, optimistic, loves big ideas and money talk. Speak like a startup mentor. Answer in 3-5 short sentences with one clear next step."};
 // =================================================
 
 const EMP = [
